@@ -5,17 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <meta name="theme-color" content="#0a0a0f" />
 <title>NEONDROP — Tetris</title>
-<meta name="description" content="NEONDROP — a sleek, modern, neon Tetris game. Hold, ghost piece, next queue, levels, scoring and local high scores." />
+<meta name="description" content="NEONDROP — a sleek neon Tetris with competitive modes, accounts and a global leaderboard." />
 <style>
   :root{
-    --bg:#0a0a0f;
-    --bg2:#10101a;
-    --panel:rgba(255,255,255,0.03);
-    --panel-border:rgba(255,255,255,0.08);
-    --text:#e8e8f0;
-    --muted:#8a8aa0;
-    --accent:#00f0ff;
-    --grid-line:rgba(255,255,255,0.04);
+    --bg:#0a0a0f; --text:#e8e8f0; --muted:#8a8aa0; --accent:#00f0ff;
+    --panel:rgba(255,255,255,0.03); --panel-border:rgba(255,255,255,0.08);
     --I:#00f0ff; --J:#3a7bff; --L:#ff8e2b; --O:#ffd23f; --S:#39e36b; --T:#c46bff; --Z:#ff4d6d;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -23,195 +17,248 @@
   body{
     font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
     background:radial-gradient(1200px 800px at 50% -10%, #16162a 0%, var(--bg) 60%);
-    color:var(--text);
-    min-height:100vh;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    overflow:hidden;
-    -webkit-tap-highlight-color:transparent;
+    color:var(--text); min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; overflow:hidden; -webkit-tap-highlight-color:transparent;
   }
-  .wrap{
-    display:flex;gap:22px;align-items:flex-start;justify-content:center;
-    padding:20px;max-width:920px;width:100%;
+  .topnav{
+    position:fixed; top:0; left:0; right:0; height:52px; display:flex; align-items:center;
+    justify-content:space-between; padding:0 18px; z-index:30;
+    background:linear-gradient(180deg, rgba(10,10,15,0.9), rgba(10,10,15,0));
   }
-  .side{display:flex;flex-direction:column;gap:14px;width:150px}
-  .panel{
-    background:var(--panel);
-    border:1px solid var(--panel-border);
-    border-radius:14px;
-    padding:14px;
-    backdrop-filter:blur(6px);
-  }
-  .panel h2{
-    font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);
-    font-weight:600;margin-bottom:10px;
-  }
-  .stat{font-size:26px;font-weight:700;line-height:1;letter-spacing:1px}
-  .stat.small{font-size:18px}
+  .topnav .brand{font-weight:800;letter-spacing:3px;font-size:15px;
+    background:linear-gradient(90deg,var(--I),var(--T));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .navbtns{display:flex;gap:8px;align-items:center}
+  .navbtn{cursor:pointer;border:1px solid var(--panel-border);background:var(--panel);color:var(--text);
+    border-radius:9px;padding:7px 14px;font-size:12px;font-weight:600;letter-spacing:1px;transition:.15s}
+  .navbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .navbtn.primary{background:linear-gradient(90deg,var(--I),#67ffe0);color:#04141a;border:none}
+  .avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid var(--panel-border)}
+  .userchip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text)}
+
+  .wrap{display:flex;gap:20px;align-items:flex-start;justify-content:center;padding:20px;max-width:940px;width:100%;margin-top:30px}
+  .side{display:flex;flex-direction:column;gap:12px;width:148px}
+  .panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:14px;padding:13px;backdrop-filter:blur(6px)}
+  .panel h2{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px}
+  .stat{font-size:24px;font-weight:700;line-height:1;letter-spacing:1px}
+  .stat.small{font-size:17px}
   .mini-canvas{width:100%;display:block;border-radius:8px}
   .center{display:flex;flex-direction:column;align-items:center;gap:10px;position:relative}
-  .title{
-    text-align:center;
-  }
-  .title h1{
-    font-size:30px;font-weight:800;letter-spacing:6px;
-    background:linear-gradient(90deg,var(--I),var(--T),var(--Z));
-    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-    filter:drop-shadow(0 0 14px rgba(0,240,255,0.35));
-  }
+  .title{text-align:center}
+  .title h1{font-size:28px;font-weight:800;letter-spacing:6px;
+    background:linear-gradient(90deg,var(--I),var(--T),var(--Z));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 14px rgba(0,240,255,0.35))}
   .title p{font-size:10px;letter-spacing:4px;color:var(--muted);margin-top:2px}
-  .board-shell{
-    position:relative;border-radius:16px;padding:10px;
+  .board-shell{position:relative;border-radius:16px;padding:10px;
     background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
-    border:1px solid var(--panel-border);
-    box-shadow:0 0 60px rgba(0,240,255,0.08), inset 0 0 30px rgba(0,0,0,0.6);
-  }
+    border:1px solid var(--panel-border);box-shadow:0 0 60px rgba(0,240,255,0.08), inset 0 0 30px rgba(0,0,0,0.6)}
   #board{display:block;border-radius:8px;background:#06060c;touch-action:none}
-  .overlay{
-    position:absolute;inset:10px;border-radius:8px;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-    background:rgba(6,6,12,0.82);backdrop-filter:blur(4px);text-align:center;padding:20px;
-    transition:opacity .25s ease;
-  }
+  .overlay{position:absolute;inset:10px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    background:rgba(6,6,12,0.86);backdrop-filter:blur(5px);text-align:center;padding:18px;transition:opacity .25s ease;z-index:5}
   .overlay.hidden{opacity:0;pointer-events:none}
-  .overlay h2{font-size:26px;letter-spacing:3px;font-weight:800}
-  .overlay p{color:var(--muted);font-size:13px;max-width:240px;line-height:1.6}
-  .btn{
-    cursor:pointer;border:none;border-radius:10px;padding:12px 26px;
-    font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
-    color:#04141a;background:linear-gradient(90deg,var(--I),#67ffe0);
-    box-shadow:0 0 20px rgba(0,240,255,0.4);transition:transform .12s ease, box-shadow .12s ease;
-  }
+  .overlay h2{font-size:24px;letter-spacing:3px;font-weight:800}
+  .overlay p{color:var(--muted);font-size:13px;max-width:250px;line-height:1.6}
+  .btn{cursor:pointer;border:none;border-radius:10px;padding:11px 24px;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+    color:#04141a;background:linear-gradient(90deg,var(--I),#67ffe0);box-shadow:0 0 20px rgba(0,240,255,0.4);transition:transform .12s ease, box-shadow .12s ease}
   .btn:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(0,240,255,0.6)}
   .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--panel-border);box-shadow:none}
+  .modegrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:280px}
+  .modecard{cursor:pointer;border:1px solid var(--panel-border);background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 8px;text-align:center;transition:.15s}
+  .modecard:hover,.modecard.sel{border-color:var(--accent);box-shadow:0 0 16px rgba(0,240,255,0.25)}
+  .modecard .mn{font-weight:700;font-size:13px;letter-spacing:1px}
+  .modecard .md{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.3}
   .icons{display:flex;gap:8px}
-  .icon-btn{
-    cursor:pointer;width:38px;height:38px;border-radius:10px;
-    background:var(--panel);border:1px solid var(--panel-border);color:var(--text);
-    font-size:16px;display:flex;align-items:center;justify-content:center;transition:.15s;
-  }
+  .icon-btn{cursor:pointer;width:36px;height:36px;border-radius:10px;background:var(--panel);border:1px solid var(--panel-border);color:var(--text);
+    font-size:15px;display:flex;align-items:center;justify-content:center;transition:.15s}
   .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
-  .keyhints{font-size:10px;color:var(--muted);line-height:1.9;letter-spacing:.5px}
-  .keyhints kbd{
-    background:rgba(255,255,255,0.06);border:1px solid var(--panel-border);border-radius:4px;
-    padding:1px 6px;font-family:inherit;font-size:10px;color:var(--text);
-  }
-  .topbar{display:flex;gap:8px;align-items:center;justify-content:center}
-  /* touch controls */
-  .touch{display:none;gap:10px;margin-top:6px;width:100%;max-width:340px}
+  .keyhints{font-size:10px;color:var(--muted);line-height:1.85;letter-spacing:.5px}
+  .keyhints kbd{background:rgba(255,255,255,0.06);border:1px solid var(--panel-border);border-radius:4px;padding:1px 5px;font-family:inherit;font-size:10px;color:var(--text)}
+  .touch{display:none;gap:10px;margin-top:4px;width:100%;max-width:340px}
   .touch .row{display:flex;gap:10px;width:100%}
-  .touch button{
-    flex:1;padding:16px 0;border-radius:12px;background:var(--panel);
-    border:1px solid var(--panel-border);color:var(--text);font-size:18px;font-weight:700;
-    user-select:none;-webkit-user-select:none;
-  }
+  .touch button{flex:1;padding:15px 0;border-radius:12px;background:var(--panel);border:1px solid var(--panel-border);color:var(--text);font-size:17px;font-weight:700;user-select:none;-webkit-user-select:none}
   .touch button:active{background:rgba(0,240,255,0.15);border-color:var(--accent)}
 
-  @media (max-width:780px){
+  .modal-bg{position:fixed;inset:0;background:rgba(4,4,10,0.78);backdrop-filter:blur(6px);z-index:40;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity .2s}
+  .modal-bg.hidden{opacity:0;pointer-events:none}
+  .modal{width:100%;max-width:480px;max-height:84vh;overflow-y:auto;background:#0e0e18;border:1px solid var(--panel-border);border-radius:16px;padding:20px}
+  .modal h3{font-size:16px;letter-spacing:2px;margin-bottom:4px}
+  .modal .sub{font-size:11px;color:var(--muted);margin-bottom:14px}
+  .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{cursor:pointer;font-size:11px;padding:6px 12px;border-radius:8px;border:1px solid var(--panel-border);color:var(--muted);letter-spacing:1px}
+  .tab.sel{color:#04141a;background:linear-gradient(90deg,var(--I),#67ffe0);border:none;font-weight:700}
+  table.lb{width:100%;border-collapse:collapse;font-size:13px}
+  table.lb th{text-align:left;color:var(--muted);font-weight:600;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--panel-border)}
+  table.lb td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.04)}
+  table.lb tr.me td{background:rgba(0,240,255,0.07)}
+  .rank{font-weight:700;color:var(--accent)}
+  .closebtn{position:absolute;top:14px;right:16px;cursor:pointer;color:var(--muted);font-size:20px}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:20px;line-height:1.6}
+  .signnote{font-size:11px;color:var(--muted);background:rgba(255,255,255,0.03);border:1px solid var(--panel-border);border-radius:8px;padding:10px;margin-top:10px;line-height:1.5}
+  .timer{font-variant-numeric:tabular-nums}
+
+  @media (max-width:800px){
     body{overflow:auto;justify-content:flex-start}
-    .wrap{flex-direction:column;align-items:center;gap:12px;padding:12px}
+    .wrap{flex-direction:column;align-items:center;gap:12px;padding:12px;margin-top:56px}
     .side{flex-direction:row;width:100%;max-width:360px;justify-content:space-between}
-    .side.left{order:2}
-    .center{order:1}
-    .panel{flex:1;padding:10px}
-    .stat{font-size:20px}
+    .side.left{order:2}.center{order:1}
+    .panel{flex:1;padding:10px}.stat{font-size:19px}
     .touch{display:flex;flex-direction:column;align-items:center}
+    .keypanel{display:none}
   }
 </style>
 </head>
 <body>
+  <div class="topnav">
+    <div class="brand">◆ NEONDROP</div>
+    <div class="navbtns">
+      <div id="lbBtn" class="navbtn">🏆 Leaderboard</div>
+      <div id="authArea"></div>
+    </div>
+  </div>
+
   <div class="wrap">
-    <!-- LEFT -->
     <div class="side left">
-      <div class="panel">
-        <h2>Hold</h2>
-        <canvas id="hold" class="mini-canvas" width="120" height="120"></canvas>
-      </div>
-      <div class="panel">
-        <h2>Score</h2>
-        <div id="score" class="stat">0</div>
-      </div>
-      <div class="panel">
-        <h2>Best</h2>
-        <div id="best" class="stat small">0</div>
-      </div>
+      <div class="panel"><h2>Hold</h2><canvas id="hold" class="mini-canvas" width="120" height="110"></canvas></div>
+      <div class="panel"><h2>Score</h2><div id="score" class="stat">0</div></div>
+      <div class="panel" id="goalPanel"><h2 id="goalLabel">Best</h2><div id="goal" class="stat small">0</div></div>
     </div>
 
-    <!-- CENTER -->
     <div class="center">
-      <div class="title">
-        <h1>NEONDROP</h1>
-        <p>BLOCK · DROP · CLEAR</p>
-      </div>
+      <div class="title"><h1>NEONDROP</h1><p id="modeSub">BLOCK · DROP · CLEAR</p></div>
       <div class="board-shell">
         <canvas id="board" width="300" height="600"></canvas>
         <div id="overlay" class="overlay">
-          <h2 id="ovTitle">NEONDROP</h2>
-          <p id="ovText">Stack the falling blocks, clear full lines, and chase your high score. Ready?</p>
+          <h2 id="ovTitle">CHOOSE A MODE</h2>
+          <div class="modegrid" id="modeGrid"></div>
+          <p id="ovText" style="margin-top:4px"></p>
           <button id="startBtn" class="btn">Play</button>
         </div>
       </div>
-      <div class="topbar">
-        <div class="icons">
-          <div id="pauseBtn" class="icon-btn" title="Pause (P)">⏸</div>
-          <div id="muteBtn" class="icon-btn" title="Mute (M)">🔊</div>
-          <div id="restartBtn" class="icon-btn" title="Restart (R)">⟳</div>
-        </div>
+      <div class="icons">
+        <div id="pauseBtn" class="icon-btn" title="Pause (P)">⏸</div>
+        <div id="muteBtn" class="icon-btn" title="Mute (M)">🔊</div>
+        <div id="restartBtn" class="icon-btn" title="Restart (R)">⟳</div>
       </div>
-      <!-- touch controls -->
       <div class="touch" id="touch">
-        <div class="row">
-          <button data-act="left">◀</button>
-          <button data-act="rotate">⟳</button>
-          <button data-act="right">▶</button>
-        </div>
-        <div class="row">
-          <button data-act="hold">HOLD</button>
-          <button data-act="down">▼</button>
-          <button data-act="drop">DROP</button>
-        </div>
+        <div class="row"><button data-act="left">◀</button><button data-act="rotate">⟳</button><button data-act="right">▶</button></div>
+        <div class="row"><button data-act="hold">HOLD</button><button data-act="down">▼</button><button data-act="drop">DROP</button></div>
       </div>
     </div>
 
-    <!-- RIGHT -->
     <div class="side right">
-      <div class="panel">
-        <h2>Next</h2>
-        <canvas id="next" class="mini-canvas" width="120" height="300"></canvas>
-      </div>
-      <div class="panel">
-        <h2>Level</h2>
-        <div id="level" class="stat">1</div>
-      </div>
-      <div class="panel">
-        <h2>Lines</h2>
-        <div id="lines" class="stat small">0</div>
-      </div>
-      <div class="panel">
-        <h2>Keys</h2>
+      <div class="panel"><h2>Next</h2><canvas id="next" class="mini-canvas" width="120" height="280"></canvas></div>
+      <div class="panel"><h2 id="timeLabel">Time</h2><div id="timer" class="stat small timer">0:00</div></div>
+      <div class="panel"><h2>Lines</h2><div id="lines" class="stat small">0</div></div>
+      <div class="panel keypanel"><h2>Keys</h2>
         <div class="keyhints">
-          <div><kbd>←</kbd> <kbd>→</kbd> Move</div>
-          <div><kbd>↑</kbd> Rotate</div>
-          <div><kbd>↓</kbd> Soft drop</div>
-          <div><kbd>Space</kbd> Hard drop</div>
-          <div><kbd>C</kbd> Hold</div>
-          <div><kbd>P</kbd> Pause</div>
+          <div><kbd>←</kbd> <kbd>→</kbd> Move</div><div><kbd>↑</kbd> Rotate</div>
+          <div><kbd>↓</kbd> Soft</div><div><kbd>Space</kbd> Drop</div>
+          <div><kbd>C</kbd> Hold</div><div><kbd>P</kbd> Pause</div>
         </div>
       </div>
     </div>
   </div>
 
+  <div id="lbModal" class="modal-bg hidden">
+    <div class="modal" style="position:relative">
+      <div class="closebtn" id="lbClose">×</div>
+      <h3>🏆 Leaderboard</h3>
+      <div class="sub" id="lbSub">Top scores</div>
+      <div class="tabs" id="lbModeTabs"></div>
+      <div class="tabs" id="lbScopeTabs">
+        <div class="tab sel" data-scope="global">Global</div>
+        <div class="tab" data-scope="me">My Games</div>
+      </div>
+      <div id="lbBody"></div>
+    </div>
+  </div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+/* =========================================================================
+   FIREBASE CONFIG  —  paste your project's web config between the braces.
+   Get it from: Firebase console -> Project settings -> "Your apps" -> Web app.
+   Leave it blank to play with local profiles only.
+   ========================================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  appId: ""
+};
+</script>
+
 <script>
 (() => {
   "use strict";
 
-  // ---------- Config ----------
-  const COLS = 10, ROWS = 20, CELL = 30;
-  const COLORS = {
-    I:'#00f0ff', J:'#3a7bff', L:'#ff8e2b', O:'#ffd23f',
-    S:'#39e36b', T:'#c46bff', Z:'#ff4d6d'
-  };
-  // SRS tetromino definitions (4 rotation states), each a list of [x,y] in a 4x4 box
-  const SHAPES = {
+  // ---------------- Backend layer (Firebase or local fallback) ----------------
+  const Backend = (() => {
+    let mode = 'local', auth = null, db = null, user = null;
+    const listeners = [];
+    const configured = FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && window.firebase;
+    if (configured) {
+      try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        auth = firebase.auth(); db = firebase.firestore(); mode = 'firebase';
+        auth.onAuthStateChanged(u => { user = u; listeners.forEach(f => f(getUser())); });
+      } catch (e) { console.warn('Firebase init failed, using local mode:', e.message); mode = 'local'; }
+    }
+    function getUser(){
+      if (mode === 'firebase') return user ? {id:user.uid, name:user.displayName||'Player', photo:user.photoURL} : null;
+      const n = localStorage.getItem('neon_profile');
+      return n ? {id:'local:'+n, name:n, photo:null, local:true} : null;
+    }
+    return {
+      mode, configured: !!configured,
+      onChange(f){ listeners.push(f); f(getUser()); },
+      getUser,
+      async signIn(){
+        if (mode === 'firebase'){ const p = new firebase.auth.GoogleAuthProvider(); await auth.signInWithPopup(p); }
+      },
+      setLocalProfile(name){ localStorage.setItem('neon_profile', name); listeners.forEach(f => f(getUser())); },
+      async signOut(){
+        if (mode === 'firebase') await auth.signOut();
+        else { localStorage.removeItem('neon_profile'); listeners.forEach(f => f(getUser())); }
+      },
+      async submitScore(rec){
+        const u = getUser(); if(!u) return;
+        const entry = {...rec, uid:u.id, name:u.name, photo:u.photo||null, tsNum:Date.now()};
+        if (mode === 'firebase'){
+          try{ await db.collection('scores').add(entry); }
+          catch(e){ console.warn('submit failed', e.message); }
+        } else {
+          const all = JSON.parse(localStorage.getItem('neon_scores')||'[]');
+          all.push(entry); localStorage.setItem('neon_scores', JSON.stringify(all.slice(-500)));
+        }
+      },
+      async topScores(gameMode, scope){
+        const u = getUser();
+        const sprint = gameMode === 'sprint';
+        if (mode === 'firebase'){
+          try{
+            let q = db.collection('scores').where('mode','==',gameMode);
+            if (scope === 'me' && u) q = q.where('uid','==',u.id);
+            q = sprint ? q.orderBy('timeMs','asc') : q.orderBy('score','desc');
+            const snap = await q.limit(20).get();
+            return snap.docs.map(d => d.data());
+          }catch(e){ console.warn('query failed (may need a Firestore index)', e.message); return []; }
+        } else {
+          let all = JSON.parse(localStorage.getItem('neon_scores')||'[]').filter(s => s.mode === gameMode);
+          if (scope === 'me' && u) all = all.filter(s => s.uid === u.id);
+          all.sort((a,b)=> sprint ? a.timeMs-b.timeMs : b.score-a.score);
+          return all.slice(0,20);
+        }
+      }
+    };
+  })();
+
+  // ---------------- Game config ----------------
+  const COLS=10, ROWS=20, CELL=30;
+  const COLORS={I:'#00f0ff',J:'#3a7bff',L:'#ff8e2b',O:'#ffd23f',S:'#39e36b',T:'#c46bff',Z:'#ff4d6d'};
+  const SHAPES={
     I:[[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]],
     J:[[[0,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[1,1],[1,2]],[[0,1],[1,1],[2,1],[2,2]],[[1,0],[1,1],[0,2],[1,2]]],
     L:[[[2,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[1,2],[2,2]],[[0,1],[1,1],[2,1],[0,2]],[[0,0],[1,0],[1,1],[1,2]]],
@@ -220,354 +267,327 @@
     T:[[[1,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[2,1],[1,2]],[[1,0],[0,1],[1,1],[1,2]]],
     Z:[[[0,0],[1,0],[1,1],[2,1]],[[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[1,2],[2,2]],[[1,0],[0,1],[1,1],[0,2]]]
   };
-  const TYPES = ['I','J','L','O','S','T','Z'];
+  const TYPES=['I','J','L','O','S','T','Z'];
 
-  // ---------- Canvas ----------
-  const boardCv = document.getElementById('board');
-  const bctx = boardCv.getContext('2d');
-  const nextCv = document.getElementById('next');
-  const nctx = nextCv.getContext('2d');
-  const holdCv = document.getElementById('hold');
-  const hctx = holdCv.getContext('2d');
-
-  // ---------- State ----------
-  let grid, current, nextQueue, holdType, canHold, bag;
-  let score, lines, level, dropInterval, dropAccumulator, lastTime;
-  let running = false, paused = false, gameOver = false, muted = false;
-  let best = parseInt(localStorage.getItem('neondrop_best') || '0', 10);
-
-  // ---------- Audio (WebAudio synth, no files) ----------
-  let actx = null;
-  function audio(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
-  function beep(freq, dur=0.08, type='square', vol=0.06){
-    if(muted) return; const a = audio(); if(!a) return;
-    const o = a.createOscillator(), g = a.createGain();
-    o.type = type; o.frequency.value = freq;
-    g.gain.setValueAtTime(vol, a.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
-    o.connect(g); g.connect(a.destination);
-    o.start(); o.stop(a.currentTime + dur);
-  }
-  const sfx = {
-    move:()=>beep(220,0.04,'square',0.035),
-    rotate:()=>beep(330,0.05,'triangle',0.04),
-    lock:()=>beep(160,0.07,'sine',0.05),
-    drop:()=>beep(120,0.1,'sawtooth',0.05),
-    clear:(n)=>{ const base=[440,520,620,760][Math.min(n-1,3)];
-      beep(base,0.12,'square',0.06); setTimeout(()=>beep(base*1.5,0.14,'square',0.05),90); },
-    over:()=>{ beep(200,0.2,'sawtooth',0.06); setTimeout(()=>beep(120,0.3,'sawtooth',0.06),160); },
-    level:()=>{ beep(523,0.1,'triangle',0.05); setTimeout(()=>beep(784,0.12,'triangle',0.05),100); }
+  const MODES={
+    marathon:{name:'Marathon', desc:'Endless. Level up forever.', goalLabel:'Best', timeLabel:'Time', baseDrop:1000, speedUp:true},
+    sprint:{name:'Sprint 40', desc:'Clear 40 lines, fastest time wins.', goalLabel:'Lines left', timeLabel:'Time', baseDrop:1000, speedUp:true, lineGoal:40},
+    ultra:{name:'Ultra 2:00', desc:'Max score in 2 minutes.', goalLabel:'Best', timeLabel:'Left', baseDrop:1000, speedUp:true, timeLimit:120000},
+    blitz:{name:'Blitz', desc:'Fast from the start.', goalLabel:'Best', timeLabel:'Time', baseDrop:380, speedUp:true}
   };
 
-  // ---------- Helpers ----------
-  function newGrid(){ return Array.from({length:ROWS}, ()=>Array(COLS).fill(null)); }
-
-  function refillBag(){
-    bag = TYPES.slice();
-    for(let i=bag.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [bag[i],bag[j]]=[bag[j],bag[i]]; }
-  }
-  function nextType(){ if(!bag || bag.length===0) refillBag(); return bag.pop(); }
-
-  function spawn(type){
-    return { type, rot:0, x:3, y:(type==='I'? -1 : -1) };
-  }
-
-  function cellsOf(piece){
-    return SHAPES[piece.type][piece.rot].map(([cx,cy]) => [piece.x+cx, piece.y+cy]);
-  }
-  function collides(piece){
-    for(const [x,y] of cellsOf(piece)){
-      if(x<0 || x>=COLS || y>=ROWS) return true;
-      if(y>=0 && grid[y][x]) return true;
+  // ---------------- Pre-rendered sprites (perf) ----------------
+  function lighten(hex,amt){const n=parseInt(hex.slice(1),16);let r=Math.min(255,(n>>16)+amt),g=Math.min(255,((n>>8)&255)+amt),b=Math.min(255,(n&255)+amt);return`rgb(${r},${g},${b})`;}
+  function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+  const sprites={}, miniSprites={};
+  function makeCanvas(w,h){const cv=document.createElement('canvas');cv.width=w;cv.height=h;return cv;}
+  function buildSprites(){
+    for(const t of TYPES){
+      const col=COLORS[t], pad=2;
+      const s=makeCanvas(CELL,CELL), c=s.getContext('2d');
+      c.shadowColor=col; c.shadowBlur=9;
+      const g=c.createLinearGradient(0,pad,0,CELL-pad); g.addColorStop(0,lighten(col,40)); g.addColorStop(1,col);
+      c.fillStyle=g; roundRect(c,pad,pad,CELL-pad*2,CELL-pad*2,5); c.fill();
+      c.shadowBlur=0; c.fillStyle='rgba(255,255,255,0.28)';
+      roundRect(c,pad,pad,CELL-pad*2,(CELL-pad*2)*0.34,5); c.fill();
+      sprites[t]=s;
+      const M=20, ms=makeCanvas(M,M), mc=ms.getContext('2d');
+      mc.shadowColor=col; mc.shadowBlur=6;
+      const mg=mc.createLinearGradient(0,0,0,M); mg.addColorStop(0,lighten(col,40)); mg.addColorStop(1,col);
+      mc.fillStyle=mg; roundRect(mc,2,2,M-4,M-4,4); mc.fill();
+      miniSprites[t]=ms;
     }
-    return false;
   }
+
+  // ---------------- Canvases ----------------
+  const boardCv=document.getElementById('board'), bctx=boardCv.getContext('2d');
+  const nextCv=document.getElementById('next'), nctx=nextCv.getContext('2d');
+  const holdCv=document.getElementById('hold'), hctx=holdCv.getContext('2d');
+  let bgCanvas;
+  function buildBg(){
+    bgCanvas=makeCanvas(COLS*CELL,ROWS*CELL); const c=bgCanvas.getContext('2d');
+    c.fillStyle='#06060c'; c.fillRect(0,0,bgCanvas.width,bgCanvas.height);
+    c.strokeStyle='rgba(255,255,255,0.04)'; c.lineWidth=1;
+    for(let x=0;x<=COLS;x++){c.beginPath();c.moveTo(x*CELL+.5,0);c.lineTo(x*CELL+.5,ROWS*CELL);c.stroke();}
+    for(let y=0;y<=ROWS;y++){c.beginPath();c.moveTo(0,y*CELL+.5);c.lineTo(COLS*CELL,y*CELL+.5);c.stroke();}
+  }
+
+  // ---------------- State ----------------
+  let grid,current,nextQueue,holdType,canHold,bag;
+  let score,lines,level,dropInterval,dropAccumulator,lastTime,elapsed;
+  let running=false,paused=false,gameOver=false,muted=false,needsRender=true;
+  let gameMode='marathon';
+  let best={};
+  try{ best=JSON.parse(localStorage.getItem('neon_best')||'{}'); }catch(e){ best={}; }
+
+  // ---------------- Audio ----------------
+  let actx=null;
+  function audio(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}return actx;}
+  function beep(f,d=0.08,type='square',v=0.06){if(muted)return;const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,a.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+d);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+d);}
+  const sfx={move:()=>beep(220,.04,'square',.03),rotate:()=>beep(330,.05,'triangle',.04),lock:()=>beep(160,.07,'sine',.05),drop:()=>beep(120,.1,'sawtooth',.05),
+    clear:n=>{const b=[440,520,620,760][Math.min(n-1,3)];beep(b,.12,'square',.06);setTimeout(()=>beep(b*1.5,.14,'square',.05),90);},
+    over:()=>{beep(200,.2,'sawtooth',.06);setTimeout(()=>beep(120,.3,'sawtooth',.06),160);},
+    win:()=>{[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.14,'triangle',.06),i*120));},
+    level:()=>{beep(523,.1,'triangle',.05);setTimeout(()=>beep(784,.12,'triangle',.05),100);}};
+
+  // ---------------- Mechanics ----------------
+  const newGrid=()=>Array.from({length:ROWS},()=>Array(COLS).fill(null));
+  function refillBag(){bag=TYPES.slice();for(let i=bag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]];}}
+  function nextType(){if(!bag||!bag.length)refillBag();return bag.pop();}
+  const spawn=t=>({type:t,rot:0,x:3,y:-1});
+  const cellsOf=p=>SHAPES[p.type][p.rot].map(([cx,cy])=>[p.x+cx,p.y+cy]);
+  function collides(p){for(const[x,y]of cellsOf(p)){if(x<0||x>=COLS||y>=ROWS)return true;if(y>=0&&grid[y][x])return true;}return false;}
 
   function startGame(){
-    grid = newGrid();
-    score = 0; lines = 0; level = 1;
-    dropInterval = 1000; dropAccumulator = 0;
-    holdType = null; canHold = true;
-    refillBag();
-    nextQueue = [nextType(), nextType(), nextType()];
-    spawnNext();
-    gameOver = false; paused = false; running = true;
+    grid=newGrid(); score=0; lines=0; level=1; elapsed=0;
+    dropInterval=MODES[gameMode].baseDrop; dropAccumulator=0;
+    holdType=null; canHold=true; refillBag();
+    nextQueue=[nextType(),nextType(),nextType()]; spawnNext();
+    gameOver=false; paused=false; running=true; needsRender=true;
+    updateHUD(); updateTimer(); hideOverlay(); lastTime=performance.now(); requestAnimationFrame(loop);
+  }
+  function spawnNext(){const t=nextQueue.shift();nextQueue.push(nextType());current=spawn(t);canHold=true;if(collides(current))endGame(false);}
+
+  function endGame(won){
+    if(!running) return;
+    running=false; gameOver=true;
+    const rec={mode:gameMode, score, lines, timeMs:Math.round(elapsed)};
+    const key=gameMode;
+    if(gameMode==='sprint'){ if(won && (!best[key]||rec.timeMs<best[key])) best[key]=rec.timeMs; }
+    else { if(!best[key]||score>best[key]) best[key]=score; }
+    localStorage.setItem('neon_best', JSON.stringify(best));
+    if((gameMode==='sprint' && won) || (gameMode!=='sprint' && score>0)) Backend.submitScore(rec);
+    if(won) sfx.win(); else sfx.over();
     updateHUD();
-    hideOverlay();
-    lastTime = performance.now();
-    requestAnimationFrame(loop);
+    const head = won ? 'COMPLETE!' : 'GAME OVER';
+    let body;
+    if(gameMode==='sprint') body = won ? `40 lines in ${fmtTime(rec.timeMs)}!` : `You cleared ${lines}/40 lines.`;
+    else if(gameMode==='ultra') body = `Final score: ${score.toLocaleString()} in 2:00.`;
+    else body = `Score ${score.toLocaleString()} · ${lines} lines · level ${level}.`;
+    showResult(head, body);
   }
 
-  function spawnNext(){
-    const type = nextQueue.shift();
-    nextQueue.push(nextType());
-    current = spawn(type);
-    canHold = true;
-    if(collides(current)){ endGame(); }
-  }
-
-  function endGame(){
-    running = false; gameOver = true;
-    sfx.over();
-    if(score > best){ best = score; localStorage.setItem('neondrop_best', String(best)); }
-    updateHUD();
-    showOverlay('GAME OVER', `You scored ${score.toLocaleString()} points and cleared ${lines} lines.\nBest: ${best.toLocaleString()}`, 'Play Again');
-  }
-
-  // ---------- Movement ----------
-  function move(dx){
-    const p = {...current, x:current.x+dx};
-    if(!collides(p)){ current = p; if(dx!==0) sfx.move(); draw(); }
-  }
-  function softDrop(){
-    const p = {...current, y:current.y+1};
-    if(!collides(p)){ current=p; score+=1; updateHUD(); draw(); }
-    else lock();
-    dropAccumulator = 0;
-  }
-  function hardDrop(){
-    let dist=0;
-    while(true){ const p={...current,y:current.y+1}; if(collides(p)) break; current=p; dist++; }
-    score += dist*2; sfx.drop();
-    lock();
-  }
+  function move(dx){const p={...current,x:current.x+dx};if(!collides(p)){current=p;if(dx)sfx.move();needsRender=true;}}
+  function softDrop(){const p={...current,y:current.y+1};if(!collides(p)){current=p;score+=1;updateHUD();needsRender=true;}else lock();dropAccumulator=0;}
+  function hardDrop(){let d=0;while(true){const p={...current,y:current.y+1};if(collides(p))break;current=p;d++;}score+=d*2;sfx.drop();lock();}
   function rotate(dir){
-    const newRot = (current.rot + (dir>0?1:3)) % 4;
-    const kicks = current.type==='I'
-      ? [[0,0],[-2,0],[1,0],[-2,1],[1,-2]]
-      : [[0,0],[-1,0],[1,0],[0,-1],[-1,-1],[1,-1],[0,2]];
-    for(const [kx,ky] of kicks){
-      const p = {...current, rot:newRot, x:current.x+kx, y:current.y+ky};
-      if(!collides(p)){ current=p; sfx.rotate(); draw(); return; }
-    }
+    const nr=(current.rot+(dir>0?1:3))%4;
+    const kicks=current.type==='I'?[[0,0],[-2,0],[1,0],[-2,1],[1,-2]]:[[0,0],[-1,0],[1,0],[0,-1],[-1,-1],[1,-1],[0,2]];
+    for(const[kx,ky]of kicks){const p={...current,rot:nr,x:current.x+kx,y:current.y+ky};if(!collides(p)){current=p;sfx.rotate();needsRender=true;return;}}
   }
-  function hold(){
-    if(!canHold) return;
-    sfx.move();
-    if(holdType==null){ holdType=current.type; spawnNext(); }
-    else { const t=holdType; holdType=current.type; current=spawn(t); if(collides(current)) endGame(); }
-    canHold=false;
-    draw(); drawHold();
-  }
-
-  function lock(){
-    for(const [x,y] of cellsOf(current)){
-      if(y<0){ endGame(); return; }
-      grid[y][x] = current.type;
-    }
-    sfx.lock();
-    clearLines();
-    spawnNext();
-    draw();
-  }
+  function hold(){if(!canHold)return;sfx.move();if(holdType==null){holdType=current.type;spawnNext();}else{const t=holdType;holdType=current.type;current=spawn(t);if(collides(current))endGame(false);}canHold=false;needsRender=true;drawHold();}
+  function lock(){for(const[x,y]of cellsOf(current)){if(y<0){endGame(false);return;}grid[y][x]=current.type;}sfx.lock();clearLines();if(running)spawnNext();needsRender=true;}
 
   function clearLines(){
     let cleared=0;
-    for(let y=ROWS-1; y>=0; y--){
-      if(grid[y].every(c=>c)){
-        grid.splice(y,1); grid.unshift(Array(COLS).fill(null));
-        cleared++; y++;
-      }
-    }
+    for(let y=ROWS-1;y>=0;y--){if(grid[y].every(c=>c)){grid.splice(y,1);grid.unshift(Array(COLS).fill(null));cleared++;y++;}}
     if(cleared>0){
-      const pts=[0,100,300,500,800][cleared]*level;
-      score += pts; lines += cleared;
-      const newLevel = Math.floor(lines/10)+1;
-      if(newLevel>level){ level=newLevel; dropInterval=Math.max(80, 1000-(level-1)*80); sfx.level(); }
-      sfx.clear(cleared);
-      updateHUD();
+      score+=[0,100,300,500,800][cleared]*level; lines+=cleared;
+      const nl=Math.floor(lines/10)+1;
+      if(MODES[gameMode].speedUp && nl>level){level=nl;dropInterval=Math.max(70,MODES[gameMode].baseDrop-(level-1)*75);sfx.level();}
+      sfx.clear(cleared); updateHUD();
+      if(gameMode==='sprint' && lines>=MODES[gameMode].lineGoal) endGame(true);
     }
   }
 
-  // ---------- Rendering ----------
-  function roundRect(ctx,x,y,w,h,r){
-    ctx.beginPath();
-    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
-  }
-  function drawCell(ctx,x,y,color,size,alpha=1,glow=true){
-    const px=x*size, py=y*size, pad=2;
-    ctx.save();
-    ctx.globalAlpha=alpha;
-    if(glow){ ctx.shadowColor=color; ctx.shadowBlur=12; }
-    const grad=ctx.createLinearGradient(px,py,px,py+size);
-    grad.addColorStop(0, lighten(color,30));
-    grad.addColorStop(1, color);
-    ctx.fillStyle=grad;
-    roundRect(ctx,px+pad,py+pad,size-pad*2,size-pad*2,5); ctx.fill();
-    ctx.shadowBlur=0;
-    ctx.globalAlpha=alpha*0.5;
-    ctx.fillStyle='rgba(255,255,255,0.25)';
-    roundRect(ctx,px+pad,py+pad,size-pad*2,(size-pad*2)*0.35,5); ctx.fill();
-    ctx.restore();
-  }
-  function lighten(hex,amt){
-    const n=parseInt(hex.slice(1),16);
-    let r=(n>>16)+amt, g=((n>>8)&255)+amt, b=(n&255)+amt;
-    r=Math.min(255,r);g=Math.min(255,g);b=Math.min(255,b);
-    return `rgb(${r},${g},${b})`;
-  }
-
-  function draw(){
-    bctx.clearRect(0,0,boardCv.width,boardCv.height);
-    // grid lines
-    bctx.strokeStyle='rgba(255,255,255,0.04)';
-    bctx.lineWidth=1;
-    for(let x=0;x<=COLS;x++){ bctx.beginPath(); bctx.moveTo(x*CELL,0); bctx.lineTo(x*CELL,ROWS*CELL); bctx.stroke(); }
-    for(let y=0;y<=ROWS;y++){ bctx.beginPath(); bctx.moveTo(0,y*CELL); bctx.lineTo(COLS*CELL,y*CELL); bctx.stroke(); }
-
-    // settled
-    for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++)
-      if(grid[y][x]) drawCell(bctx,x,y,COLORS[grid[y][x]],CELL);
-
-    if(current && running){
-      // ghost
-      let ghost={...current};
-      while(true){ const p={...ghost,y:ghost.y+1}; if(collides(p)) break; ghost=p; }
-      for(const [x,y] of cellsOf(ghost)) if(y>=0) drawCell(bctx,x,y,COLORS[current.type],CELL,0.18,false);
-      // current
-      for(const [x,y] of cellsOf(current)) if(y>=0) drawCell(bctx,x,y,COLORS[current.type],CELL);
+  // ---------------- Render ----------------
+  function render(){
+    bctx.drawImage(bgCanvas,0,0);
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(grid[y][x])bctx.drawImage(sprites[grid[y][x]],x*CELL,y*CELL);
+    if(current&&running){
+      let gh={...current};while(true){const p={...gh,y:gh.y+1};if(collides(p))break;gh=p;}
+      bctx.globalAlpha=0.18;for(const[x,y]of cellsOf(gh))if(y>=0)bctx.drawImage(sprites[current.type],x*CELL,y*CELL);
+      bctx.globalAlpha=1;for(const[x,y]of cellsOf(current))if(y>=0)bctx.drawImage(sprites[current.type],x*CELL,y*CELL);
     }
   }
-
-  function drawMini(ctx,cv,type){
-    ctx.clearRect(0,0,cv.width,cv.height);
-    if(!type) return;
-    const cells=SHAPES[type][0];
-    const xs=cells.map(c=>c[0]), ys=cells.map(c=>c[1]);
+  function drawHold(){hctx.clearRect(0,0,holdCv.width,holdCv.height);if(holdType)paintPiece(hctx,holdCv,holdType,holdCv.height/2);}
+  function drawNext(){nctx.clearRect(0,0,nextCv.width,nextCv.height);if(!nextQueue)return;nextQueue.forEach((t,i)=>paintPiece(nctx,nextCv,t,nextCv.height/6+i*(nextCv.height/3)));}
+  function paintPiece(ctx,cv,type,cy){
+    const cells=SHAPES[type][0],xs=cells.map(c=>c[0]),ys=cells.map(c=>c[1]);
     const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-    const w=maxX-minX+1, h=maxY-minY+1, size=22;
-    const offX=(cv.width-w*size)/2, offY=(cv.height/ (cv===nextCv?6:1) - h*size)/2;
-    return {cells,minX,minY,size,offX,offY};
+    const w=maxX-minX+1,h=maxY-minY+1,M=20,offX=(cv.width-w*M)/2-minX*M,offY=cy-(h*M)/2-minY*M;
+    for(const[x,y]of cells)ctx.drawImage(miniSprites[type],offX+x*M,offY+y*M);
   }
 
-  function drawHold(){
-    hctx.clearRect(0,0,holdCv.width,holdCv.height);
-    if(!holdType) return;
-    paintPiece(hctx, holdCv, holdType, 0, holdCv.height/2);
-  }
-  function drawNext(){
-    nctx.clearRect(0,0,nextCv.width,nextCv.height);
-    nextQueue.forEach((t,i)=> paintPiece(nctx,nextCv,t,0,nextCv.height/6 + i*(nextCv.height/3)));
-  }
-  function paintPiece(ctx,cv,type,_,cy){
-    const cells=SHAPES[type][0];
-    const xs=cells.map(c=>c[0]), ys=cells.map(c=>c[1]);
-    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-    const w=maxX-minX+1, h=maxY-minY+1, size=20;
-    const offX=(cv.width - w*size)/2 - minX*size;
-    const offY=cy - (h*size)/2 - minY*size;
-    for(const [x,y] of cells){
-      const px=offX+x*size, py=offY+y*size, pad=2;
-      ctx.save(); ctx.shadowColor=COLORS[type]; ctx.shadowBlur=8;
-      const g=ctx.createLinearGradient(px,py,px,py+size);
-      g.addColorStop(0,lighten(COLORS[type],30)); g.addColorStop(1,COLORS[type]);
-      ctx.fillStyle=g; roundRect(ctx,px+pad,py+pad,size-pad*2,size-pad*2,4); ctx.fill();
-      ctx.restore();
-    }
-  }
-
-  // ---------- HUD ----------
+  // ---------------- HUD ----------------
+  const fmtTime=ms=>{const s=Math.floor(ms/1000),m=Math.floor(s/60);return m+':'+String(s%60).padStart(2,'0');};
   function updateHUD(){
-    document.getElementById('score').textContent = score.toLocaleString();
-    document.getElementById('best').textContent = best.toLocaleString();
-    document.getElementById('level').textContent = level;
-    document.getElementById('lines').textContent = lines;
+    document.getElementById('score').textContent=score!=null?score.toLocaleString():'0';
+    document.getElementById('lines').textContent=lines!=null?lines:0;
+    const M=MODES[gameMode];
+    document.getElementById('goalLabel').textContent=M.goalLabel;
+    document.getElementById('timeLabel').textContent=M.timeLabel;
+    let goalVal;
+    if(gameMode==='sprint') goalVal=Math.max(0,M.lineGoal-(lines||0));
+    else { const b=best[gameMode]; goalVal=b?b.toLocaleString():'0'; }
+    document.getElementById('goal').textContent=goalVal;
     drawNext(); drawHold();
   }
+  function updateTimer(){
+    const M=MODES[gameMode];
+    let t = M.timeLimit ? Math.max(0,M.timeLimit-(elapsed||0)) : (elapsed||0);
+    document.getElementById('timer').textContent=fmtTime(t);
+  }
 
-  // ---------- Overlay ----------
+  // ---------------- Overlay / modes ----------------
   const overlay=document.getElementById('overlay');
-  function showOverlay(title,text,btn){
-    document.getElementById('ovTitle').textContent=title;
-    document.getElementById('ovText').textContent=text;
-    document.getElementById('startBtn').textContent=btn||'Play';
+  function buildModeCards(){
+    const g=document.getElementById('modeGrid'); g.innerHTML='';
+    Object.entries(MODES).forEach(([k,m])=>{
+      const d=document.createElement('div'); d.className='modecard'+(k===gameMode?' sel':''); d.dataset.mode=k;
+      d.innerHTML=`<div class="mn">${m.name}</div><div class="md">${m.desc}</div>`;
+      d.onclick=()=>{gameMode=k;document.querySelectorAll('.modecard').forEach(c=>c.classList.toggle('sel',c.dataset.mode===k));syncModeUI();};
+      g.appendChild(d);
+    });
+  }
+  function syncModeUI(){document.getElementById('modeSub').textContent=MODES[gameMode].name.toUpperCase()+' MODE';updateHUD();updateTimer();}
+  function showChooser(){
+    document.getElementById('ovTitle').textContent='CHOOSE A MODE';
+    document.getElementById('ovText').textContent=MODES[gameMode].desc;
+    document.getElementById('modeGrid').style.display='grid';
+    document.getElementById('startBtn').textContent='Play';
     overlay.classList.remove('hidden');
   }
-  function hideOverlay(){ overlay.classList.add('hidden'); }
+  function showResult(title,text){
+    document.getElementById('ovTitle').textContent=title;
+    document.getElementById('ovText').textContent=text+'  Pick a mode and go again.';
+    document.getElementById('modeGrid').style.display='grid';
+    document.getElementById('startBtn').textContent='Play Again';
+    overlay.classList.remove('hidden');
+  }
+  function showPaused(){
+    document.getElementById('ovTitle').textContent='PAUSED';
+    document.getElementById('ovText').textContent='Press Resume or P to continue.';
+    document.getElementById('modeGrid').style.display='none';
+    document.getElementById('startBtn').textContent='Resume';
+    overlay.classList.remove('hidden');
+  }
+  const hideOverlay=()=>overlay.classList.add('hidden');
 
-  // ---------- Loop ----------
+  // ---------------- Loop ----------------
   function loop(t){
-    if(!running) return;
-    const dt = t - lastTime; lastTime = t;
+    if(!running)return;
+    const dt=t-lastTime; lastTime=t;
     if(!paused){
-      dropAccumulator += dt;
-      if(dropAccumulator >= dropInterval){
-        dropAccumulator = 0;
-        const p={...current,y:current.y+1};
-        if(!collides(p)){ current=p; draw(); }
-        else lock();
-      }
+      elapsed+=dt; dropAccumulator+=dt;
+      const M=MODES[gameMode];
+      if(M.timeLimit && elapsed>=M.timeLimit){ elapsed=M.timeLimit; updateTimer(); endGame(false); return; }
+      if(dropAccumulator>=dropInterval){dropAccumulator=0;const p={...current,y:current.y+1};if(!collides(p)){current=p;needsRender=true;}else lock();}
+      updateTimer();
     }
+    if(needsRender){render();needsRender=false;}
     requestAnimationFrame(loop);
   }
 
-  // ---------- Input ----------
-  const keyMap={
-    'ArrowLeft':()=>move(-1),'ArrowRight':()=>move(1),
-    'ArrowDown':()=>softDrop(),'ArrowUp':()=>rotate(1),
-    'KeyZ':()=>rotate(-1),'KeyX':()=>rotate(1),
-    'Space':()=>hardDrop(),'KeyC':()=>hold(),'ShiftLeft':()=>hold()
-  };
-  document.addEventListener('keydown',(e)=>{
-    if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space'].includes(e.code)) e.preventDefault();
-    if(e.code==='KeyP'){ togglePause(); return; }
-    if(e.code==='KeyM'){ toggleMute(); return; }
-    if(e.code==='KeyR'){ startGame(); return; }
-    if(!running || paused) return;
-    const fn=keyMap[e.code]; if(fn) fn();
+  // ---------------- Input ----------------
+  const keyMap={'ArrowLeft':()=>move(-1),'ArrowRight':()=>move(1),'ArrowDown':()=>softDrop(),'ArrowUp':()=>rotate(1),'KeyZ':()=>rotate(-1),'KeyX':()=>rotate(1),'Space':()=>hardDrop(),'KeyC':()=>hold(),'ShiftLeft':()=>hold()};
+  document.addEventListener('keydown',e=>{
+    if(['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','Space'].includes(e.code))e.preventDefault();
+    if(e.code==='KeyP'){togglePause();return;}
+    if(e.code==='KeyM'){toggleMute();return;}
+    if(e.code==='KeyR'){audio();startGame();return;}
+    if(!running||paused)return;const fn=keyMap[e.code];if(fn)fn();
   });
+  function togglePause(){if(!running)return;paused=!paused;if(paused)showPaused();else{hideOverlay();lastTime=performance.now();}}
+  function toggleMute(){muted=!muted;document.getElementById('muteBtn').textContent=muted?'🔇':'🔊';}
 
-  function togglePause(){
-    if(!running) return;
-    paused=!paused;
-    if(paused){ showOverlay('PAUSED','Take a breath. Press Play or P to resume.','Resume'); }
-    else { hideOverlay(); lastTime=performance.now(); }
-  }
-  function toggleMute(){
-    muted=!muted;
-    document.getElementById('muteBtn').textContent = muted ? '🔇':'🔊';
-  }
-
-  // buttons
-  document.getElementById('startBtn').addEventListener('click',()=>{
-    audio(); // unlock audio on user gesture
-    if(paused && running){ togglePause(); } else { startGame(); }
-  });
+  document.getElementById('startBtn').addEventListener('click',()=>{audio();if(paused&&running){togglePause();}else{startGame();}});
   document.getElementById('pauseBtn').addEventListener('click',togglePause);
   document.getElementById('muteBtn').addEventListener('click',toggleMute);
-  document.getElementById('restartBtn').addEventListener('click',startGame);
+  document.getElementById('restartBtn').addEventListener('click',()=>{audio();startGame();});
 
-  // touch controls
-  document.querySelectorAll('.touch button').forEach(b=>{
-    b.addEventListener('click',()=>{
-      if(!running||paused) return;
-      const a=b.dataset.act;
-      if(a==='left')move(-1); else if(a==='right')move(1);
-      else if(a==='rotate')rotate(1); else if(a==='down')softDrop();
-      else if(a==='drop')hardDrop(); else if(a==='hold')hold();
-    });
-  });
-  // swipe on board
+  document.querySelectorAll('.touch button').forEach(b=>b.addEventListener('click',()=>{
+    if(!running||paused)return;const a=b.dataset.act;
+    if(a==='left')move(-1);else if(a==='right')move(1);else if(a==='rotate')rotate(1);
+    else if(a==='down')softDrop();else if(a==='drop')hardDrop();else if(a==='hold')hold();
+  }));
   let tStart=null;
-  boardCv.addEventListener('touchstart',(e)=>{ tStart=e.touches[0]; },{passive:true});
-  boardCv.addEventListener('touchend',(e)=>{
-    if(!tStart||!running||paused) return;
-    const dx=e.changedTouches[0].clientX-tStart.clientX;
-    const dy=e.changedTouches[0].clientY-tStart.clientY;
-    if(Math.abs(dx)<14 && Math.abs(dy)<14){ rotate(1); }
-    else if(Math.abs(dx)>Math.abs(dy)){ move(dx>0?1:-1); }
-    else if(dy>40){ hardDrop(); } else if(dy>0){ softDrop(); }
+  boardCv.addEventListener('touchstart',e=>{tStart=e.touches[0];},{passive:true});
+  boardCv.addEventListener('touchend',e=>{
+    if(!tStart||!running||paused)return;
+    const dx=e.changedTouches[0].clientX-tStart.clientX,dy=e.changedTouches[0].clientY-tStart.clientY;
+    if(Math.abs(dx)<14&&Math.abs(dy)<14)rotate(1);
+    else if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);
+    else if(dy>40)hardDrop();else if(dy>0)softDrop();
     tStart=null;
   },{passive:true});
 
-  // ---------- Init ----------
-  grid=newGrid();
-  document.getElementById('best').textContent = best.toLocaleString();
-  draw();
+  // ---------------- Auth UI ----------------
+  const authArea=document.getElementById('authArea');
+  function renderAuth(u){
+    authArea.innerHTML='';
+    if(u){
+      const chip=document.createElement('div'); chip.className='userchip';
+      const av=u.photo?`<img class="avatar" src="${u.photo}" alt="">`:'<div class="avatar" style="background:linear-gradient(135deg,#00f0ff,#c46bff)"></div>';
+      chip.innerHTML=`${av}<span>${escapeHtml(u.name)}</span>`;
+      const out=document.createElement('div'); out.className='navbtn'; out.textContent='Sign out';
+      out.onclick=()=>Backend.signOut();
+      authArea.append(chip,out);
+    } else {
+      const b=document.createElement('div'); b.className='navbtn primary';
+      b.textContent = Backend.mode==='firebase' ? 'Sign in' : 'Create profile';
+      b.onclick=doSignIn; authArea.appendChild(b);
+    }
+  }
+  async function doSignIn(){
+    if(Backend.mode==='firebase'){
+      try{ await Backend.signIn(); }catch(e){ alert('Sign-in failed: '+e.message); }
+    } else {
+      const n=prompt('Choose a player name for your local profile:');
+      if(n&&n.trim()) Backend.setLocalProfile(n.trim().slice(0,20));
+    }
+  }
+  Backend.onChange(renderAuth);
 
-  // expose for testing
-  window.__neon = { startGame, getState:()=>({score,lines,level,gameOver,running,grid,current}) , clearLines, setGrid:(g)=>{grid=g} };
+  // ---------------- Leaderboard modal ----------------
+  const lbModal=document.getElementById('lbModal');
+  let lbMode=null, lbScope='global';
+  function openLb(){
+    lbMode=lbMode||gameMode; lbModal.classList.remove('hidden');
+    const tabs=document.getElementById('lbModeTabs'); tabs.innerHTML='';
+    Object.entries(MODES).forEach(([k,m])=>{
+      const t=document.createElement('div'); t.className='tab'+(k===lbMode?' sel':''); t.textContent=m.name; t.dataset.m=k;
+      t.onclick=()=>{lbMode=k;document.querySelectorAll('#lbModeTabs .tab').forEach(x=>x.classList.toggle('sel',x.dataset.m===k));loadLb();};
+      tabs.appendChild(t);
+    });
+    loadLb();
+  }
+  document.querySelectorAll('#lbScopeTabs .tab').forEach(t=>t.onclick=()=>{
+    lbScope=t.dataset.scope; document.querySelectorAll('#lbScopeTabs .tab').forEach(x=>x.classList.toggle('sel',x===t)); loadLb();
+  });
+  async function loadLb(){
+    const body=document.getElementById('lbBody');
+    document.getElementById('lbSub').textContent=(MODES[lbMode].name)+(lbMode==='sprint'?' · fastest time':' · highest score');
+    body.innerHTML='<div class="empty">Loading…</div>';
+    const u=Backend.getUser();
+    const rows=await Backend.topScores(lbMode,lbScope);
+    if(!rows.length){
+      body.innerHTML='<div class="empty">No scores yet'+(Backend.mode==='firebase'?'':' (local mode — scores save on this device)')+'.<br>Be the first!</div>';
+      if(Backend.mode==='local') body.innerHTML+='<div class="signnote">Add your Firebase config (see README) to enable real accounts and a shared global leaderboard.</div>';
+      return;
+    }
+    const sprint=lbMode==='sprint';
+    let html='<table class="lb"><thead><tr><th>#</th><th>Player</th><th>'+(sprint?'Time':'Score')+'</th><th>Lines</th></tr></thead><tbody>';
+    rows.forEach((r,i)=>{
+      const me=u&&r.uid===u.id?' class="me"':'';
+      const val=sprint?fmtTime(r.timeMs):(r.score||0).toLocaleString();
+      html+=`<tr${me}><td class="rank">${i+1}</td><td>${escapeHtml(r.name||'Player')}</td><td>${val}</td><td>${r.lines||0}</td></tr>`;
+    });
+    html+='</tbody></table>';
+    if(Backend.mode==='local') html+='<div class="signnote">You\'re in local mode. Add your Firebase config (see README) to enable real accounts and a shared global leaderboard.</div>';
+    body.innerHTML=html;
+  }
+  const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  document.getElementById('lbBtn').onclick=openLb;
+  document.getElementById('lbClose').onclick=()=>lbModal.classList.add('hidden');
+  lbModal.addEventListener('click',e=>{if(e.target===lbModal)lbModal.classList.add('hidden');});
+
+  // ---------------- Init ----------------
+  buildSprites(); buildBg(); buildModeCards(); syncModeUI();
+  grid=newGrid(); render(); showChooser();
+
+  window.__neon={startGame,getState:()=>({score,lines,level,gameOver,running,grid,current,gameMode,elapsed}),
+    clearLines,setGrid:g=>{grid=g},setMode:m=>{gameMode=m;syncModeUI();},backendMode:Backend.mode};
 })();
 </script>
 </body>
